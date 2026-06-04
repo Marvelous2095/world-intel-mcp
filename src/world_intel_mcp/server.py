@@ -32,6 +32,8 @@ Phase 17: Cross-domain analytics — cross-domain correlation, domain summary, t
           (+3 = 109 tools). Historical analysis and early warning from accumulated vector data.
 Phase 18: PDF/HTML intelligence reports (+1 = 110 tools). WeasyPrint-based multi-section
           report generation covering 18 intelligence domains in parallel.
+Phase 19: Consumer energy signals (+3 = 113 tools). Retail fuel, residential natural gas,
+          and electricity rates round out consumer energy monitoring.
 """
 
 import asyncio

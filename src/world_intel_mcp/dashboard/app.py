@@ -648,9 +648,41 @@ app = Starlette(
 )
 
 
-def run(host: str = "127.0.0.1", port: int = 8501) -> None:
+def _parse_run_args(argv: list[str] | None = None) -> tuple[str, int]:
+    """Parse dashboard CLI args for the console script and module runner."""
+    import argparse
+    import os
+
+    default_port = int(
+        os.environ.get(
+            "WORLD_INTEL_DASHBOARD_PORT",
+            os.environ.get("PORT", "8501"),
+        )
+    )
+    parser = argparse.ArgumentParser(description="Run the World Intelligence dashboard")
+    parser.add_argument(
+        "--host",
+        default=os.environ.get("WORLD_INTEL_DASHBOARD_HOST", "127.0.0.1"),
+        help="Interface to bind (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=default_port,
+        help="Port to bind (default: 8501, or WORLD_INTEL_DASHBOARD_PORT/PORT)",
+    )
+    args = parser.parse_args(argv)
+    return args.host, args.port
+
+
+def run(host: str | None = None, port: int | None = None) -> None:
     """Launch the dashboard server."""
     import uvicorn
+
+    if host is None or port is None:
+        parsed_host, parsed_port = _parse_run_args()
+        host = host or parsed_host
+        port = parsed_port if port is None else port
 
     logger.info("Starting Intelligence Dashboard on http://%s:%d", host, port)
     uvicorn.run(
@@ -660,3 +692,7 @@ def run(host: str = "127.0.0.1", port: int = 8501) -> None:
         log_level="info",
         access_log=False,
     )
+
+
+if __name__ == "__main__":
+    run()

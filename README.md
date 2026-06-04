@@ -6,7 +6,7 @@
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-green)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-Real-time global intelligence across **30+ domains** with **109 MCP tools**, a live ops-center dashboard, a CLI, and a **Qdrant vector store** for enterprise-grade semantic search across accumulated intelligence. All data comes from free, public APIs — no paid subscriptions required.
+Real-time global intelligence across **30+ domains** with **113 MCP tools**, a live ops-center dashboard, a CLI, and a **Qdrant vector store** for enterprise-grade semantic search across accumulated intelligence. All data comes from free, public APIs — no paid subscriptions required.
 
 Built for AI agents that need world awareness: market conditions, geopolitical risk, military posture, supply chain disruptions, cyber threats, and more — all queryable via the Model Context Protocol. The vector store enables natural language queries like *"military activity near Taiwan"* or *"cyber threats targeting healthcare"* across all historical data.
 
@@ -23,7 +23,7 @@ Built for AI agents that need world awareness: market conditions, geopolitical r
 | **SEC Filings** | 3 | SEC EDGAR (full-text search, company filings, 8-K material events) |
 | **Company Enrichment** | 1 | Yahoo Finance + GDELT + SEC + GitHub (composite profile) |
 | **Macro Composite** | 1 | Weighted 6-signal market verdict (Fear&Greed, VIX, sectors, DXY, BTC, yields) |
-| **Economic Indicators** | 3 | EIA energy, FRED macro, World Bank |
+| **Economic Indicators** | 6 | AAA fuel prices, EIA energy, FRED macro, World Bank |
 | **Central Banks** | 1 | 8 central bank policy rates |
 | **BTC Technicals** | 1 | SMA 50/200, golden/death cross, Mayer Multiple |
 | **Natural Disasters** | 2 | USGS earthquakes, NASA FIRMS wildfires |
@@ -57,7 +57,7 @@ Built for AI agents that need world awareness: market conditions, geopolitical r
 | **Cross-Domain Analytics** | 3 | Correlation, domain summary, trend detection |
 | **Reports** | 1 | PDF/HTML multi-domain intelligence reports |
 
-**Total: 110 tools** across 30+ intelligence domains.
+**Total: 113 tools** across 30+ intelligence domains.
 
 ---
 
@@ -194,9 +194,12 @@ collector.py  (daemon)    ─┘
 |------|-------------|
 | `intel_macro_composite` | Weighted market score (0-100) with verdict: RISK_ON to STRONG_CAUTION |
 
-### Economic (3)
+### Economic (6)
 | Tool | Description |
 |------|-------------|
+| `intel_gas_prices` | Daily US retail gasoline, diesel, and E85 prices from AAA |
+| `intel_residential_natgas` | US residential natural gas prices from EIA |
+| `intel_electricity_rates` | US electricity retail rates by sector/state from EIA |
 | `intel_energy_prices` | Brent/WTI crude oil and natural gas from EIA |
 | `intel_fred_series` | FRED economic data (GDP, CPI, unemployment, rates) |
 | `intel_world_bank_indicators` | World Bank development indicators by country |

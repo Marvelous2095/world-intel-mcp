@@ -1177,6 +1177,72 @@ async def test_fetch_central_bank_rates_with_fred(fetcher: Fetcher) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Space Weather
+# ---------------------------------------------------------------------------
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_fetch_space_weather_current_kp_dict_payload(fetcher: Fetcher) -> None:
+    from world_intel_mcp.sources.space_weather import (
+        _ALERTS_URL,
+        _FLARE_URL,
+        _KP_URL,
+        fetch_space_weather,
+    )
+
+    respx.get(_KP_URL).mock(
+        return_value=httpx.Response(
+            200,
+            json=[
+                {
+                    "time_tag": "2026-06-04T03:00:00",
+                    "Kp": 4.67,
+                    "a_running": 17,
+                    "station_count": 8,
+                },
+                {
+                    "time_tag": "2026-06-04T06:00:00",
+                    "Kp": 5.0,
+                    "a_running": 20,
+                    "station_count": 8,
+                },
+            ],
+        )
+    )
+    respx.get(_FLARE_URL).mock(
+        return_value=httpx.Response(
+            200,
+            json=[{"time_tag": "2026-06-04T06:00:00Z", "flux": 1.2e-5}],
+        )
+    )
+    respx.get(_ALERTS_URL).mock(
+        return_value=httpx.Response(
+            200,
+            json=[
+                {
+                    "issue_datetime": "2026-06-04T06:10:00Z",
+                    "message": "Geomagnetic storm conditions observed",
+                    "product_id": "WATA50",
+                }
+            ],
+        )
+    )
+
+    result = await fetch_space_weather(fetcher)
+
+    assert result["source"] == "noaa-swpc"
+    assert result["current_kp"] == 5.0
+    assert result["kp_level"] == "G1 Minor"
+    assert result["kp_recent"][-1] == {
+        "time": "2026-06-04T06:00:00",
+        "kp": 5.0,
+    }
+    assert result["latest_flare_class"] == "M1.2"
+    assert result["alerts"][0]["product_id"] == "WATA50"
+
+
+# ---------------------------------------------------------------------------
 # USNI Fleet Tracker
 # ---------------------------------------------------------------------------
 

@@ -1,5 +1,6 @@
 """Tests for SQLite TTL cache."""
 
+import tempfile
 import time
 from pathlib import Path
 
@@ -64,3 +65,35 @@ def test_complex_values(cache: Cache) -> None:
     data = {"nested": {"list": [1, 2, 3], "bool": True, "null": None}}
     cache.set("complex", data, ttl_seconds=60)
     assert cache.get("complex") == data
+
+
+def test_default_path_honors_env_override(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    db_path = tmp_path / "custom-cache.db"
+    monkeypatch.setenv("WORLD_INTEL_CACHE_DB", str(db_path))
+
+    cache = Cache()
+    try:
+        assert cache.db_path == db_path
+        cache.set("env", "ok", ttl_seconds=60)
+        assert cache.get("env") == "ok"
+    finally:
+        cache.close()
+
+
+def test_default_path_falls_back_when_unavailable(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    bad_path = tmp_path / "cache-dir"
+    bad_path.mkdir()
+    monkeypatch.setenv("WORLD_INTEL_CACHE_DB", str(bad_path))
+
+    cache = Cache()
+    try:
+        expected = Path(tempfile.gettempdir()) / "world-intel-mcp" / "cache.db"
+        assert cache.db_path == expected
+        cache.set("fallback", "ok", ttl_seconds=60)
+        assert cache.get("fallback") == "ok"
+    finally:
+        cache.close()

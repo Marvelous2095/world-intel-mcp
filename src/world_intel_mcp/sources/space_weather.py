@@ -81,6 +81,21 @@ def _classify_xray(flux: float) -> str:
         return "A"
 
 
+def _parse_kp_row(row) -> tuple[str | None, float] | None:
+    """Parse NOAA Kp rows from either current dict or legacy list payloads."""
+    try:
+        if isinstance(row, dict):
+            raw_kp = row.get("Kp", row.get("kp"))
+            if raw_kp is None:
+                return None
+            return row.get("time_tag") or row.get("time"), float(raw_kp)
+        if isinstance(row, list) and len(row) >= 2:
+            return row[0], float(row[1])
+    except (ValueError, TypeError):
+        return None
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -135,31 +150,35 @@ async def fetch_space_weather(fetcher: Fetcher) -> dict:
 
     # --- Kp index ---
     if kp_data and isinstance(kp_data, list) and len(kp_data) > 1:
-        # First row is header, rest are data [time_tag, Kp, ...]
-        try:
-            # Get most recent Kp reading
-            latest = kp_data[-1]
-            kp_val = float(latest[1])
+        # NOAA has served both legacy list rows [time_tag, Kp, ...] and
+        # current dict rows {"time_tag": "...", "Kp": ...}; tolerate both.
+        latest = next(
+            (
+                parsed
+                for parsed in (_parse_kp_row(row) for row in reversed(kp_data))
+                if parsed is not None
+            ),
+            None,
+        )
+        if latest is not None:
+            _, kp_val = latest
             result["current_kp"] = kp_val
             result["kp_level"] = _classify_kp(kp_val)
 
-            # Last 8 readings (24 hours of 3-hourly data)
-            recent = []
-            for row in kp_data[-9:-1]:  # skip header
-                if isinstance(row, list) and len(row) >= 2:
-                    try:
-                        recent.append({
-                            "time": row[0],
-                            "kp": float(row[1]),
-                        })
-                    except (ValueError, TypeError, IndexError):
-                        pass
-            result["kp_recent"] = recent
-        except (ValueError, TypeError, IndexError) as exc:
-            logger.warning("Failed to parse Kp data: %s", exc)
+        recent = []
+        for row in kp_data[-8:]:
+            parsed = _parse_kp_row(row)
+            if parsed is None:
+                continue
+            row_time, kp_val = parsed
+            recent.append({
+                "time": row_time,
+                "kp": kp_val,
+            })
+        result["kp_recent"] = recent
 
     # --- X-ray flux (flare activity) ---
-    if flare_data and isinstance(flare_data, list) and len(flare_data) > 1:
+    if flare_data and isinstance(flare_data, list):
         try:
             # Last entry has the most recent flux reading
             latest_flare = flare_data[-1]

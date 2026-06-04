@@ -6,7 +6,9 @@ No external deps — just stdlib sqlite3.
 
 import json
 import logging
+import os
 import sqlite3
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -16,16 +18,39 @@ logger = logging.getLogger("world-intel-mcp.cache")
 _DEFAULT_DB = Path.home() / ".cache" / "world-intel-mcp" / "cache.db"
 
 
+def _default_db_path() -> Path:
+    if env_path := os.environ.get("WORLD_INTEL_CACHE_DB"):
+        return Path(env_path).expanduser()
+    if xdg_cache := os.environ.get("XDG_CACHE_HOME"):
+        return Path(xdg_cache).expanduser() / "world-intel-mcp" / "cache.db"
+    return _DEFAULT_DB
+
+
 class Cache:
     """SQLite-backed TTL cache."""
 
     def __init__(self, db_path: Path | None = None):
-        self.db_path = db_path or _DEFAULT_DB
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        explicit_path = db_path is not None
+        self.db_path = Path(db_path) if db_path is not None else _default_db_path()
         self._conn: sqlite3.Connection | None = None
-        self._init_db()
+        try:
+            self._init_db()
+        except (OSError, sqlite3.OperationalError) as exc:
+            if explicit_path:
+                raise
+            fallback = Path(tempfile.gettempdir()) / "world-intel-mcp" / "cache.db"
+            logger.warning(
+                "Cache unavailable at %s: %s; falling back to %s",
+                self.db_path,
+                exc,
+                fallback,
+            )
+            self.close()
+            self.db_path = fallback
+            self._init_db()
 
     def _init_db(self) -> None:
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
         conn = self._get_conn()
         conn.execute("""
             CREATE TABLE IF NOT EXISTS cache (

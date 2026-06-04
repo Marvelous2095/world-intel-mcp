@@ -1,8 +1,8 @@
 # World Intel MCP — Feature Parity Roadmap
 
 **Benchmark**: [koala73/worldmonitor](https://github.com/koala73/worldmonitor)
-**Updated**: 2026-03-08
-**Current tools**: 110 (109 intel + 1 status)
+**Updated**: 2026-06-04
+**Current tools**: 113 (112 intel + 1 status)
 
 ---
 
@@ -20,11 +20,11 @@
 
 | Area | Finding | Status | Action |
 |------|---------|--------|--------|
-| MCP tool parity | 110 tools declared in `TOOLS`; 110 routed in `_dispatch()` | :white_check_mark: | Keep as an invariant |
+| MCP tool parity | 113 tools declared in `TOOLS`; 113 routed in `_dispatch()` | :white_check_mark: | Keep as an invariant |
 | Optional vector runtime | Missing `qdrant-client` / `fastembed` previously surfaced as runtime failures | :white_check_mark: Fixed | Vector features now degrade cleanly and report availability |
 | Base-environment test run | `pytest -q` fails collection without dev extras because `respx` is not installed | :yellow_circle: | Run `pip install -e ".[dev]"` before full-suite validation |
-| Core verification | 127 infrastructure/report/vector tests pass in the base environment | :white_check_mark: | `test_reports.py`, `test_cache.py`, `test_analysis.py`, `test_vector_store.py` |
-| Documentation drift | Prior roadmap documented 89 tools while the codebase exposed 110 | :white_check_mark: Updated below | Keep roadmap synced with phase increments |
+| Core verification | 226 non-smoke tests pass with dev extras installed | :white_check_mark: | Full default `pytest` run |
+| Documentation drift | Prior roadmap documented 89/110 tools while the codebase now exposes 113 | :white_check_mark: Updated below | Keep roadmap synced with phase increments |
 | Maintainability | `src/world_intel_mcp/server.py` is ~2.5k lines and remains the main refactor target | :yellow_circle: | Split tool registry and dispatch by domain |
 
 ### Implemented Addendum Missing From Prior Roadmap
@@ -69,7 +69,7 @@
 
 ## 1. Data Sources — Complete Inventory
 
-### Markets & Economics (13 tools)
+### Markets & Economics (16 tools)
 
 | Tool | WM Equivalent | Status |
 |------|---------------|--------|
@@ -80,6 +80,9 @@
 | `intel_sector_heatmap` | `get-sector-summary` | :white_check_mark: |
 | `intel_macro_signals` | `get-macro-signals` | :white_check_mark: |
 | `intel_commodity_quotes` | `list-commodity-quotes` | :white_check_mark: |
+| `intel_gas_prices` | AAA retail fuel prices | :white_check_mark: |
+| `intel_residential_natgas` | EIA residential natural gas prices | :white_check_mark: |
+| `intel_electricity_rates` | EIA electricity rates by sector/state | :white_check_mark: |
 | `intel_energy_prices` | `get-energy-prices` | :white_check_mark: |
 | `intel_fred_series` | `get-fred-series` | :white_check_mark: |
 | `intel_world_bank_indicators` | `list-world-bank-indicators` | :white_check_mark: |
@@ -422,17 +425,22 @@ Added historical cross-category correlation, stored-data summarization, and rece
 
 Added PDF/HTML intelligence report generation over the existing multi-domain data collection stack. PDF output remains optional behind `.[pdf]`, with HTML fallback available when WeasyPrint is not installed.
 
+### Phase 18: Consumer Energy Signals (+3 = 113 tools)
+`intel_gas_prices`, `intel_residential_natgas`, `intel_electricity_rates`
+
+Added retail fuel, residential natural gas, and electricity-rate tools to round out consumer energy monitoring alongside existing EIA crude, gas, FRED, and World Bank economic signals.
+
 ---
 
 ## Summary
 
 | Category | Current | Notes |
 |----------|---------|-------|
-| Total MCP tools | 110 | 109 intelligence tools + `intel_status` |
-| Tool parity | 110 / 110 | `TOOLS` and `_dispatch()` are aligned |
+| Total MCP tools | 113 | 112 intelligence tools + `intel_status` |
+| Tool parity | 113 / 113 | `TOOLS` and `_dispatch()` are aligned |
 | Static datasets | 18 | Bases, ports, pipelines, nuclear, cables, datacenters, spaceports, minerals, exchanges, trade routes, cloud regions, financial centers |
 | RSS feeds | 119 | 24 categories |
-| Tests in repo | 344 | 11 test files; full suite requires `.[dev]` |
+| Tests in repo | 244 | 226 non-smoke tests + 18 live smoke tests; full suite requires `.[dev]` |
 | Primary remaining gap | Architecture | `server.py` monolith remains the main refactor target |
 
-**Bottom line**: 110 tools across 30+ domains, with the roadmap now aligned to the live MCP registry. The main remaining gaps are full-environment test bootstrapping (`.[dev]`) and continued modularization of the monolithic `server.py` tool registry/dispatcher.
+**Bottom line**: 113 tools across 30+ domains, with the roadmap now aligned to the live MCP registry. The main remaining gaps are full-environment test bootstrapping (`.[dev]`) and continued modularization of the monolithic `server.py` tool registry/dispatcher.
