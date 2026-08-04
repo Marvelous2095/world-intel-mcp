@@ -85,10 +85,19 @@ async def fetch_airport_delays(fetcher: Fetcher) -> dict:
         statuses = []
         if gd := item.get("groundDelay"):
             if isinstance(gd, dict):
+                avg_val = gd.get("avgDelay")
+                if avg_val is not None:
+                    try:
+                        avg_str = f"{int(float(avg_val))} mins"
+                    except (ValueError, TypeError):
+                        avg_str = str(avg_val)
+                else:
+                    avg_str = ""
+
                 statuses.append({
                     "type": "Ground Delay",
                     "reason": gd.get("impactingCondition") or "Traffic/Weather",
-                    "avg_delay": f"{int(gd.get('avgDelay', 0))} mins" if gd.get("avgDelay") else "",
+                    "avg_delay": avg_str,
                     "closure_begin": gd.get("startTime", ""),
                     "closure_end": gd.get("endTime", ""),
                 })
@@ -103,12 +112,23 @@ async def fetch_airport_delays(fetcher: Fetcher) -> dict:
                     "closure_end": gs.get("endTime", ""),
                 })
 
+        def _delay_range_str(d: dict) -> str:
+            mn = d.get("minDelay")
+            mx = d.get("maxDelay")
+            if mn is not None and mx is not None and str(mn) != "" and str(mx) != "":
+                return f"{mn}-{mx} mins"
+            elif mn is not None and str(mn) != "":
+                return f"{mn} mins"
+            elif mx is not None and str(mx) != "":
+                return f"{mx} mins"
+            return ""
+
         if arr := item.get("arrivalDelay"):
             if isinstance(arr, dict):
                 statuses.append({
                     "type": "Arrival Delay",
                     "reason": arr.get("impactingCondition") or "Volume/Weather",
-                    "avg_delay": f"{arr.get('minDelay', '')}-{arr.get('maxDelay', '')} mins",
+                    "avg_delay": _delay_range_str(arr),
                     "closure_begin": "",
                     "closure_end": "",
                 })
@@ -118,7 +138,7 @@ async def fetch_airport_delays(fetcher: Fetcher) -> dict:
                 statuses.append({
                     "type": "Departure Delay",
                     "reason": dep.get("impactingCondition") or "Volume/Weather",
-                    "avg_delay": f"{dep.get('minDelay', '')}-{dep.get('maxDelay', '')} mins",
+                    "avg_delay": _delay_range_str(dep),
                     "closure_begin": "",
                     "closure_end": "",
                 })

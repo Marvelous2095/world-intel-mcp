@@ -402,7 +402,7 @@ class VectorStore:
             "category": category,
             "text": text[:2000],
             "content_hash": content_hash,
-            "timestamp": timestamp,
+            "timestamp": int(timestamp),
             "datetime": datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat(),
             "has_error": bool(isinstance(data, dict) and data.get("error")),
         }

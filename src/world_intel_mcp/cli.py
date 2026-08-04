@@ -49,6 +49,7 @@ from .sources.hacker_news import fetch_hacker_news
 from .sources.github_trending import fetch_trending_repos
 from .sources.arxiv_papers import fetch_arxiv_papers
 from .sources.usa_spending import fetch_usa_spending
+from .sources import geospatial
 import sys
 
 if sys.platform == "win32":
