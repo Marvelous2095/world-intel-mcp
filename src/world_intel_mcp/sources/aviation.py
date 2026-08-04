@@ -19,7 +19,7 @@ logger = logging.getLogger("world-intel-mcp.sources.aviation")
 # Constants
 # ---------------------------------------------------------------------------
 
-_FAA_STATUS_URL = "https://soa.smext.faa.gov/asws/api/airport/status"
+_FAA_STATUS_URL = "https://nasstatus.faa.gov/api/airport-events"
 
 _MAJOR_AIRPORTS = [
     "ATL", "LAX", "ORD", "DFW", "DEN", "JFK", "SFO", "SEA", "LAS", "MCO",
@@ -35,48 +35,15 @@ def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _parse_airport_status(code: str, data: dict) -> dict:
-    """Extract structured fields from a single FAA airport status response."""
-    name = data.get("Name", code)
-    delay = data.get("Delay", False)
-
-    # Normalize delay to boolean (API may return string "true"/"false")
-    if isinstance(delay, str):
-        delay = delay.lower() == "true"
-
-    status_items = data.get("Status", [])
-    if not isinstance(status_items, list):
-        status_items = [status_items] if isinstance(status_items, dict) else []
-
-    parsed_statuses = []
-    for item in status_items:
-        if not isinstance(item, dict):
-            continue
-        parsed_statuses.append({
-            "type": item.get("Type", ""),
-            "reason": item.get("Reason", ""),
-            "avg_delay": item.get("AvgDelay", ""),
-            "closure_begin": item.get("ClosureBegin", ""),
-            "closure_end": item.get("ClosureEnd", ""),
-        })
-
-    return {
-        "code": code,
-        "name": name,
-        "delay": delay,
-        "status": parsed_statuses,
-    }
-
-
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
 async def fetch_airport_delays(fetcher: Fetcher) -> dict:
-    """Fetch current US airport delays from the FAA Airport Status API.
+    """Fetch current US airport delays from the official FAA NAS Status API.
 
-    Queries the FAA ASWS API for each major US airport in parallel and
-    returns a summary of which airports currently have active delays.
+    Queries the official FAA REST endpoint at nasstatus.faa.gov/api/airport-events
+    in a single request for active ground stops, ground delays, and closures.
 
     Args:
         fetcher: Shared HTTP fetcher with caching and circuit breaking.
@@ -84,53 +51,91 @@ async def fetch_airport_delays(fetcher: Fetcher) -> dict:
     Returns:
         Dict with delayed airports list, counts, source, and timestamp.
     """
-
-    async def _fetch_one(code: str) -> tuple[str, dict | None]:
-        """Fetch status for a single airport, returning (code, data|None)."""
-        data = await fetcher.get_json(
-            url=f"{_FAA_STATUS_URL}/{code}",
-            source="faa",
-            cache_key=f"aviation:faa:{code}",
-            cache_ttl=300,
-        )
-        return code, data
-
-    # Fetch all airports in parallel
-    results = await asyncio.gather(
-        *[_fetch_one(code) for code in _MAJOR_AIRPORTS],
-        return_exceptions=True,
-    )
-
     now_iso = _utc_now_iso()
 
+    data = await fetcher.get_json(
+        url=_FAA_STATUS_URL,
+        source="faa",
+        cache_key="aviation:faa:nas_events",
+        cache_ttl=300,
+        timeout=10.0,
+    )
+
+    if data is None or not isinstance(data, list):
+        return {
+            "delayed": [],
+            "delayed_count": 0,
+            "total_checked": len(_MAJOR_AIRPORTS),
+            "errors": 1 if data is None else 0,
+            "source": "faa",
+            "timestamp": now_iso,
+        }
+
     delayed: list[dict] = []
-    all_airports: list[dict] = []
-    errors = 0
 
-    for result in results:
-        if isinstance(result, Exception):
-            logger.warning("Exception fetching airport status: %s", result)
-            errors += 1
+    for item in data:
+        if not isinstance(item, dict):
             continue
 
-        code, data = result
-
-        if data is None:
-            logger.debug("No data returned for airport %s", code)
-            errors += 1
+        code = item.get("airportId") or ""
+        name = item.get("airportLongName") or code
+        if not code:
             continue
 
-        parsed = _parse_airport_status(code, data)
-        all_airports.append(parsed)
+        statuses = []
+        if gd := item.get("groundDelay"):
+            if isinstance(gd, dict):
+                statuses.append({
+                    "type": "Ground Delay",
+                    "reason": gd.get("impactingCondition") or "Traffic/Weather",
+                    "avg_delay": f"{int(gd.get('avgDelay', 0))} mins" if gd.get("avgDelay") else "",
+                    "closure_begin": gd.get("startTime", ""),
+                    "closure_end": gd.get("endTime", ""),
+                })
 
-        if parsed["delay"]:
-            delayed.append(parsed)
+        if gs := item.get("groundStop"):
+            if isinstance(gs, dict):
+                statuses.append({
+                    "type": "Ground Stop",
+                    "reason": gs.get("impactingCondition") or gs.get("reason") or "Weather",
+                    "avg_delay": "Stopped",
+                    "closure_begin": gs.get("startTime", ""),
+                    "closure_end": gs.get("endTime", ""),
+                })
+
+        if arr := item.get("arrivalDelay"):
+            if isinstance(arr, dict):
+                statuses.append({
+                    "type": "Arrival Delay",
+                    "reason": arr.get("impactingCondition") or "Volume/Weather",
+                    "avg_delay": f"{arr.get('minDelay', '')}-{arr.get('maxDelay', '')} mins",
+                    "closure_begin": "",
+                    "closure_end": "",
+                })
+
+        if dep := item.get("departureDelay"):
+            if isinstance(dep, dict):
+                statuses.append({
+                    "type": "Departure Delay",
+                    "reason": dep.get("impactingCondition") or "Volume/Weather",
+                    "avg_delay": f"{dep.get('minDelay', '')}-{dep.get('maxDelay', '')} mins",
+                    "closure_begin": "",
+                    "closure_end": "",
+                })
+
+        if statuses:
+            delayed.append({
+                "code": code,
+                "name": name,
+                "delay": True,
+                "status": statuses,
+            })
 
     return {
         "delayed": delayed,
         "delayed_count": len(delayed),
-        "total_checked": len(_MAJOR_AIRPORTS),
-        "errors": errors,
+        "total_checked": len(data),
+        "errors": 0,
         "source": "faa",
         "timestamp": now_iso,
     }

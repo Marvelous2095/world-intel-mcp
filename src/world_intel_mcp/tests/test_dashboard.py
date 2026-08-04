@@ -27,3 +27,12 @@ def test_parse_run_args_env_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert host == "0.0.0.0"
     assert port == 7777
+
+
+@pytest.mark.asyncio
+async def test_index_route() -> None:
+    from world_intel_mcp.dashboard.app import index
+    response = await index(None)
+    assert response.status_code == 200
+    assert "Phoenix Intelligence Dashboard" in response.body.decode("utf-8")
+

@@ -419,7 +419,7 @@ class TestGenerateReport:
         assert "markets" in result["sections_included"]
         assert output.exists()
 
-        content = output.read_text()
+        content = output.read_text(encoding="utf-8")
         assert "<!DOCTYPE html>" in content
         assert "SPX" in content
 
@@ -478,5 +478,5 @@ class TestGenerateReport:
                 MagicMock(), output_path=output, title="Daily Brief", fmt="html"
             )
 
-        content = output.read_text()
+        content = output.read_text(encoding="utf-8")
         assert "Daily Brief" in content

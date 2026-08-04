@@ -188,12 +188,12 @@ def _get_qdrant():
             )
         from qdrant_client import QdrantClient
 
-        _qdrant_client = QdrantClient(url=QDRANT_URL, timeout=10)
+        client = QdrantClient(url=QDRANT_URL, timeout=3.0)
 
         # Create collection if it doesn't exist
-        collections = [c.name for c in _qdrant_client.get_collections().collections]
+        collections = [c.name for c in client.get_collections().collections]
         if COLLECTION_NAME not in collections:
-            _qdrant_client.create_collection(
+            client.create_collection(
                 collection_name=COLLECTION_NAME,
                 vectors_config=VectorParams(
                     size=EMBEDDING_DIM,
@@ -201,22 +201,23 @@ def _get_qdrant():
                 ),
             )
             # Create payload indexes for efficient filtering
-            _qdrant_client.create_payload_index(
+            client.create_payload_index(
                 collection_name=COLLECTION_NAME,
                 field_name="domain",
                 field_schema=PayloadSchemaType.KEYWORD,
             )
-            _qdrant_client.create_payload_index(
+            client.create_payload_index(
                 collection_name=COLLECTION_NAME,
                 field_name="category",
                 field_schema=PayloadSchemaType.KEYWORD,
             )
-            _qdrant_client.create_payload_index(
+            client.create_payload_index(
                 collection_name=COLLECTION_NAME,
                 field_name="timestamp",
-                field_schema=PayloadSchemaType.FLOAT,
+                field_schema=PayloadSchemaType.INTEGER,
             )
             logger.info("Created Qdrant collection: %s", COLLECTION_NAME)
+        _qdrant_client = client
     return _qdrant_client
 
 

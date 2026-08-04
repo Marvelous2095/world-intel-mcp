@@ -301,7 +301,7 @@ async def _fetch_overview() -> dict:
 async def index(request):
     """Serve the dashboard HTML page (reloads on each request during dev)."""
     html_path = Path(__file__).parent / "index.html"
-    return HTMLResponse(html_path.read_text())
+    return HTMLResponse(html_path.read_text(encoding="utf-8"))
 
 
 async def api_overview(request):

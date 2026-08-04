@@ -61,6 +61,18 @@ class Cache:
             )
         """)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_cache_expires ON cache(expires_at)")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS circuit_breaker (
+                source TEXT PRIMARY KEY,
+                failures INTEGER NOT NULL,
+                last_failure REAL NOT NULL,
+                tripped_at REAL NOT NULL,
+                is_open INTEGER NOT NULL,
+                total_trips INTEGER NOT NULL,
+                total_successes INTEGER NOT NULL,
+                total_failures INTEGER NOT NULL
+            )
+        """)
         conn.commit()
 
     def _get_conn(self) -> sqlite3.Connection:
@@ -163,6 +175,67 @@ class Cache:
                     "newest_key": key,
                 }
         return sources
+
+    def save_breaker_state(self, source: str, state_dict: dict) -> None:
+        """Persist circuit breaker state for a source to DB."""
+        try:
+            conn = self._get_conn()
+            conn.execute(
+                """
+                INSERT INTO circuit_breaker (
+                    source, failures, last_failure, tripped_at, is_open,
+                    total_trips, total_successes, total_failures
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(source) DO UPDATE SET
+                    failures=excluded.failures,
+                    last_failure=excluded.last_failure,
+                    tripped_at=excluded.tripped_at,
+                    is_open=excluded.is_open,
+                    total_trips=excluded.total_trips,
+                    total_successes=excluded.total_successes,
+                    total_failures=excluded.total_failures
+                """,
+                (
+                    source,
+                    state_dict["failures"],
+                    state_dict["last_failure"],
+                    state_dict["tripped_at"],
+                    1 if state_dict["is_open"] else 0,
+                    state_dict["total_trips"],
+                    state_dict["total_successes"],
+                    state_dict["total_failures"],
+                ),
+            )
+            conn.commit()
+        except Exception as exc:
+            logger.debug("Failed to save breaker state for %s: %s", source, exc)
+
+    def load_breaker_states(self) -> dict[str, dict]:
+        """Load all circuit breaker states from DB."""
+        try:
+            conn = self._get_conn()
+            rows = conn.execute(
+                """
+                SELECT source, failures, last_failure, tripped_at, is_open,
+                       total_trips, total_successes, total_failures
+                FROM circuit_breaker
+                """
+            ).fetchall()
+            result = {}
+            for row in rows:
+                result[row[0]] = {
+                    "failures": row[1],
+                    "last_failure": row[2],
+                    "tripped_at": row[3],
+                    "is_open": bool(row[4]),
+                    "total_trips": row[5],
+                    "total_successes": row[6],
+                    "total_failures": row[7],
+                }
+            return result
+        except Exception as exc:
+            logger.debug("Failed to load breaker states: %s", exc)
+            return {}
 
     def close(self) -> None:
         if self._conn:

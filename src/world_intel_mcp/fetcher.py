@@ -57,6 +57,10 @@ class Fetcher:
     ):
         self.cache = cache
         self.breaker = breaker
+        if getattr(self.breaker, "cache", None) is None:
+            self.breaker.cache = self.cache
+            if hasattr(self.breaker, "_load_from_cache"):
+                self.breaker._load_from_cache()
         self.default_timeout = default_timeout
         self.max_retries = max_retries
         self._client: httpx.AsyncClient | None = client
@@ -68,7 +72,13 @@ class Fetcher:
                 timeout=httpx.Timeout(self.default_timeout),
                 follow_redirects=True,
                 limits=httpx.Limits(max_connections=200, max_keepalive_connections=40),
-                headers={"User-Agent": "PhoenixAGI-WorldIntel/0.1"},
+                headers={
+                    "User-Agent": (
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/122.0.0.0 Safari/537.36 WorldIntelMCP/1.0"
+                    )
+                },
                 proxy=None,  # never inherit system SOCKS proxy
             )
         return self._client
@@ -191,11 +201,18 @@ class Fetcher:
         client = await self._get_client()
         last_error: Exception | None = None
 
+        req_headers = {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/rss+xml;q=0.9,text/xml;q=0.8,*/*;q=0.7",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
+        if headers:
+            req_headers.update(headers)
+
         for attempt in range(self.max_retries + 1):
             try:
                 resp = await client.get(
                     url,
-                    headers=headers,
+                    headers=req_headers,
                     params=params,
                     timeout=timeout or self.default_timeout,
                 )

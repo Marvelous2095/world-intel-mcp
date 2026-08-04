@@ -182,7 +182,7 @@ async def collect_once(
     fetcher: Fetcher,
     vector_store: VectorStore,
     source_filter: set[str] | None = None,
-    timeout: float = 45.0,
+    timeout: float = 90.0,
 ) -> dict:
     """Run one collection cycle across all sources.
 
