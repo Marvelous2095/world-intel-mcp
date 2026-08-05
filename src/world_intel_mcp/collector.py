@@ -46,6 +46,7 @@ SOURCES = [
     ("etf_flows", "sources.markets", "fetch_etf_flows", {}),
     ("commodity_quotes", "sources.markets", "fetch_commodity_quotes", {}),
     ("btc_technicals", "sources.markets", "fetch_btc_technicals", {}),
+    ("cftc_cot", "sources.cot", "fetch_cot_positioning", {}),
     # Economic (6)
     ("energy_prices", "sources.economic", "fetch_energy_prices", {}),
     ("gas_prices", "sources.economic", "fetch_gas_prices", {}),
