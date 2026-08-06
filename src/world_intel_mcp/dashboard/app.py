@@ -48,6 +48,9 @@ from world_intel_mcp.sources import (
     service_status,
     traffic,
     webcams,
+    cot,
+    eurozone,
+    us_macro_direct,
 )
 from world_intel_mcp.analysis.alerts import fetch_alert_digest, fetch_weekly_trends
 from world_intel_mcp.analysis.posture import fetch_strategic_posture
@@ -158,6 +161,12 @@ async def _fetch_overview() -> dict:
         "webcams": webcams.fetch_webcams(fetcher),
         "btc_technicals": markets.fetch_btc_technicals(fetcher),
         "central_bank_rates": fetch_central_bank_rates(fetcher),
+        "cftc_cot": cot.fetch_cot_positioning(fetcher),
+        "eurostat_macro": eurozone.fetch_eurostat_macro(fetcher),
+        "ecb_data": eurozone.fetch_ecb_data(fetcher),
+        "ifo_zew_sentiment": eurozone.fetch_ifo_zew_sentiment(fetcher),
+        "bls_releases": us_macro_direct.fetch_bls_releases(fetcher),
+        "bea_pce_gdp": us_macro_direct.fetch_bea_pce_gdp(fetcher),
     }
 
     # Per-coro timeout so no single slow source blocks the entire dashboard.
