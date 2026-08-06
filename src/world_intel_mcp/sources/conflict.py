@@ -248,7 +248,7 @@ async def fetch_ucdp_events(
         cache_key=f"conflict:ucdp:{days}:page1",
         cache_ttl=21600,
         params={"pagesize": min(limit, 1000), "page": 0},
-        headers=ucdp_headers or None,
+        headers=ucdp_headers,
         timeout=30.0,
     )
 
