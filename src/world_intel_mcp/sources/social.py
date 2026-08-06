@@ -23,7 +23,7 @@ _REDDIT_HOT_URL = "https://www.reddit.com/r/{subreddit}/hot.json"
 _CACHE_TTL = 300  # 5 minutes
 
 _HEADERS = {
-    "User-Agent": "PhoenixAGI-WorldIntel/0.1 (intelligence monitoring)",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
 }
 
 

@@ -24,7 +24,7 @@ logger = logging.getLogger("world-intel-mcp.sources.cyber")
 _FEODO_URL = "https://feodotracker.abuse.ch/downloads/ipblocklist_recommended.json"
 _CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 _SANS_ISC_URL = "https://isc.sans.edu/api/topips/records/20?json"
-_URLHAUS_RECENT_URL = "https://urlhaus-api.abuse.ch/v1/urls/recent/limit/25/"
+_URLHAUS_RECENT_URL = "https://urlhaus.abuse.ch/downloads/json_recent/"
 
 # ---------------------------------------------------------------------------
 # Severity ranking for sorting
@@ -146,12 +146,14 @@ def _normalize_urlhaus(data: dict | None) -> list[dict]:
     if not data or not isinstance(data, dict):
         return []
 
-    urls = data.get("urls", [])
-    if not isinstance(urls, list):
+    raw_entries = list(data.values()) if isinstance(data, dict) and "urls" not in data else data.get("urls", [])
+    if not isinstance(raw_entries, list):
         return []
 
     items: list[dict] = []
-    for entry in urls:
+    for entry in list(raw_entries)[:50]:
+        if not isinstance(entry, dict):
+            continue
         status = (entry.get("url_status") or "").lower()
         severity = "high" if status == "online" else "low"
         items.append({

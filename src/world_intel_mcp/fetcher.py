@@ -275,6 +275,17 @@ class Fetcher:
                 return text
             except (httpx.HTTPStatusError, httpx.RequestError, Exception) as exc:
                 last_error = exc
+                if "CERTIFICATE_VERIFY_FAILED" in str(exc) or "certificate verify failed" in str(exc):
+                    try:
+                        async with httpx.AsyncClient(verify=False, follow_redirects=True, timeout=timeout or self.default_timeout) as insecure_client:
+                            resp = await insecure_client.get(url, headers=req_headers, params=params)
+                            resp.raise_for_status()
+                            text = resp.text
+                            self.breaker.record_success(source)
+                            self.cache.set(effective_key, text, cache_ttl)
+                            return text
+                    except Exception as insecure_exc:
+                        last_error = insecure_exc
                 if attempt < self.max_retries:
                     await asyncio.sleep(min(2 ** attempt, 30))
 

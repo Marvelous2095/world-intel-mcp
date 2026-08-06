@@ -362,13 +362,17 @@ class VectorStore:
                 try:
                     await asyncio.to_thread(self._store_sync, domain, data, timestamp)
                 except Exception as exc:
-                    logger.warning("Vector store write failed: %s", exc)
+                    if not getattr(self, "_warned_connection", False):
+                        logger.info("Qdrant vector store connection unavailable (running without local Qdrant server): %s", exc)
+                        self._warned_connection = True
+                    else:
+                        logger.debug("Vector store write failed: %s", exc)
                 finally:
                     self._store_queue.task_done()
             except asyncio.CancelledError:
                 return
             except Exception as exc:
-                logger.warning("Vector store worker error: %s", exc)
+                logger.debug("Vector store worker error: %s", exc)
                 await asyncio.sleep(1)
 
     def _store_sync(self, domain: str, data: Any, timestamp: float) -> None:

@@ -152,7 +152,7 @@ def _point_in_corridor(
 # IODA fallback (Georgia Tech Internet Intelligence — public, no auth)
 # ---------------------------------------------------------------------------
 
-_IODA_OUTAGES_URL = "https://api.ioda.inetintel.cc.gatech.edu/v2/outages/overall"
+_IODA_OUTAGES_URL = "https://api.ioda.inetintel.cc.gatech.edu/v2/outages/events"
 
 
 async def _fetch_ioda_outages(fetcher: Fetcher) -> dict | None:
