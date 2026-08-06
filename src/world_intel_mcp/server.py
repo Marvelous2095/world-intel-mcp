@@ -82,6 +82,9 @@ from .sources import (
     environmental,
     usni_fleet,
     central_banks,
+    cot,
+    eurozone,
+    us_macro_direct,
 )
 
 logging.basicConfig(
@@ -1762,6 +1765,108 @@ TOOLS: list[Tool] = [
         description="Get data source health, circuit breaker status, cache freshness, vector store stats, and system statistics.",
         inputSchema={"type": "object", "properties": {}},
     ),
+    # --- COT & Institutional Positioning (3 tools) ---
+    Tool(
+        name="intel_cftc_cot",
+        description="Get CFTC Commitments of Traders (COT) institutional positioning metrics (Commercial vs Non-Commercial net positions, Z-score, COT Index, signal). Optional: markets (list of symbols, e.g. ['EUR', 'GOLD', 'WTI', 'SP500', 'DAX']).",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "markets": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of market symbols to query (default: all major markets)",
+                },
+            },
+        },
+    ),
+    Tool(
+        name="intel_cot_extremes",
+        description="Screen for futures markets with extreme institutional positioning (|Z-score| >= threshold). Useful for identifying squeeze risks and market crowding.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "threshold": {
+                    "type": "number",
+                    "description": "Z-score threshold for extreme positioning (default: 1.5)",
+                    "default": 1.5,
+                },
+            },
+        },
+    ),
+    Tool(
+        name="intel_cot_history",
+        description="Fetch weekly historical COT positioning data for a specific market (default 'EUR', up to 52 weeks).",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "market": {
+                    "type": "string",
+                    "description": "Market symbol (e.g., 'EUR', 'GOLD', 'WTI', 'SP500')",
+                    "default": "EUR",
+                },
+                "weeks": {
+                    "type": "integer",
+                    "description": "Number of weekly historical records (default: 52)",
+                    "default": 52,
+                },
+            },
+        },
+    ),
+    # --- Eurozone & DAX Macro (3 tools) ---
+    Tool(
+        name="intel_eurostat_macro",
+        description="Get official Eurozone & German macroeconomic indicators directly from Eurostat (HICP Inflation, Unemployment Rate, GDP Growth).",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "indicators": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of indicator keys ('hicp', 'gdp', 'unemployment')",
+                },
+            },
+        },
+    ),
+    Tool(
+        name="intel_ecb_data",
+        description="Get key ECB monetary policy interest rates and EUR/USD exchange rate reference directly from the ECB Data Portal.",
+        inputSchema={
+            "type": "object",
+            "properties": {},
+        },
+    ),
+    Tool(
+        name="intel_ifo_zew",
+        description="Get latest German Business Climate (Ifo Index) and ZEW Economic Sentiment indicators for DAX and EUR/USD context.",
+        inputSchema={
+            "type": "object",
+            "properties": {},
+        },
+    ),
+    # --- US Direct Macro Releases (2 tools) ---
+    Tool(
+        name="intel_bls_releases",
+        description="Get high-impact US economic releases (Nonfarm Payrolls/NFP, CPI, PPI, Unemployment Rate) directly from the US Bureau of Labor Statistics (BLS v2 API).",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "series_keys": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of series keys ('NFP', 'CPI', 'PPI', 'UNEMPLOYMENT')",
+                },
+            },
+        },
+    ),
+    Tool(
+        name="intel_bea_pce_gdp",
+        description="Get US Personal Consumption Expenditures (PCE Deflator - Fed's preferred inflation metric) and Real GDP growth data.",
+        inputSchema={
+            "type": "object",
+            "properties": {},
+        },
+    ),
 ]
 
 
@@ -2424,6 +2529,28 @@ async def _dispatch(name: str, arguments: dict[str, Any]) -> Any:
                 recent_hours=arguments.get("recent_hours", 6.0),
                 baseline_hours=arguments.get("baseline_hours", 48.0),
             )
+
+        # COT & Positioning
+        case "intel_cftc_cot":
+            return await cot.fetch_cot_positioning(fetcher, markets=arguments.get("markets"))
+        case "intel_cot_extremes":
+            return await cot.fetch_cot_extremes(fetcher, threshold=arguments.get("threshold", 1.5))
+        case "intel_cot_history":
+            return await cot.fetch_cot_history(fetcher, market=arguments.get("market", "EUR"), weeks=arguments.get("weeks", 52))
+
+        # Eurozone Macro
+        case "intel_eurostat_macro":
+            return await eurozone.fetch_eurostat_macro(fetcher, indicators=arguments.get("indicators"))
+        case "intel_ecb_data":
+            return await eurozone.fetch_ecb_data(fetcher)
+        case "intel_ifo_zew":
+            return await eurozone.fetch_ifo_zew_sentiment(fetcher)
+
+        # US Macro Direct
+        case "intel_bls_releases":
+            return await us_macro_direct.fetch_bls_releases(fetcher, series_keys=arguments.get("series_keys"))
+        case "intel_bea_pce_gdp":
+            return await us_macro_direct.fetch_bea_pce_gdp(fetcher)
 
         # System
         # Reports
