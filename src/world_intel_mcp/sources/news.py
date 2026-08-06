@@ -41,7 +41,7 @@ _RSS_FEEDS: dict[str, list[tuple[str, str]]] = {
         ("VOA News", "https://www.voanews.com/api/zyrttemnuq"),
     ],
     "security": [
-        ("BleepingComputer", "https://www.bleepingcomputer.com/feed/"),
+        ("BleepingComputer", "https://news.google.com/rss/search?q=site:bleepingcomputer.com"),
         ("Krebs on Security", "https://krebsonsecurity.com/feed/"),
         ("The Hacker News", "https://feeds.feedburner.com/TheHackersNews"),
         ("Schneier on Security", "https://www.schneier.com/feed/atom/"),
@@ -87,7 +87,7 @@ _RSS_FEEDS: dict[str, list[tuple[str, str]]] = {
             "https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=science",
         ),
         ("Phys.org", "https://phys.org/rss-feed/"),
-        ("New Scientist", "https://www.newscientist.com/feed/home/"),
+        ("New Scientist", "https://news.google.com/rss/search?q=site:newscientist.com"),
         ("Live Science", "https://www.livescience.com/feeds/all"),
         ("SpaceNews", "https://spacenews.com/feed/"),
     ],
@@ -98,7 +98,7 @@ _RSS_FEEDS: dict[str, list[tuple[str, str]]] = {
         ("CFR", "https://www.cfr.org/feed"),
         ("CSIS", "https://www.csis.org/rss.xml"),
         ("Atlantic Council", "https://www.atlanticcouncil.org/feed/"),
-        ("Chatham House", "https://www.chathamhouse.org/rss.xml"),
+        ("Chatham House", "https://news.google.com/rss/search?q=site:chathamhouse.org"),
     ],
     "middle_east": [
         ("Middle East Eye", "https://www.middleeasteye.net/rss"),
@@ -106,7 +106,7 @@ _RSS_FEEDS: dict[str, list[tuple[str, str]]] = {
             "The National UAE",
             "https://www.thenationalnews.com/arc/outboundfeeds/rss/?outputType=xml",
         ),
-        ("Times of Israel", "https://www.timesofisrael.com/feed/"),
+        ("Times of Israel", "https://news.google.com/rss/search?q=site:timesofisrael.com"),
         ("Iran Intl", "https://www.iranintl.com/en/feed"),
     ],
     "asia_pacific": [
@@ -124,7 +124,7 @@ _RSS_FEEDS: dict[str, list[tuple[str, str]]] = {
         ("The Africa Report", "https://www.theafricareport.com/feed/"),
         ("African Arguments", "https://africanarguments.org/feed/"),
         ("ISS Africa", "https://issafrica.org/iss-today/feed"),
-        ("Daily Maverick", "https://www.dailymaverick.co.za/feed/"),
+        ("Daily Maverick", "https://news.google.com/rss/search?q=site:dailymaverick.co.za"),
     ],
     "latin_america": [
         ("MercoPress", "https://en.mercopress.com/rss"),
@@ -133,7 +133,7 @@ _RSS_FEEDS: dict[str, list[tuple[str, str]]] = {
         ("Buenos Aires Times", "https://www.batimes.com.ar/feed"),
         ("Tico Times", "https://ticotimes.net/feed"),
         ("InSight Crime", "https://insightcrime.org/feed/"),
-        ("Brazil Reports", "https://brazilian.report/feed"),
+        ("Brazil Reports", "https://news.google.com/rss/search?q=site:brazilian.report"),
         ("Mexico News Daily", "https://mexiconewsdaily.com/feed/"),
     ],
     "multilingual": [
@@ -147,7 +147,7 @@ _RSS_FEEDS: dict[str, list[tuple[str, str]]] = {
     ],
     "energy": [
         ("Oil Price", "https://oilprice.com/rss/main"),
-        ("Rigzone", "https://www.rigzone.com/news/rss/rigzone_latest.aspx"),
+        ("Rigzone", "https://news.google.com/rss/search?q=site:rigzone.com"),
         ("Utility Dive", "https://www.utilitydive.com/feeds/news/"),
         ("Carbon Brief", "https://www.carbonbrief.org/feed/"),
         ("CleanTechnica", "https://cleantechnica.com/feed/"),
@@ -164,11 +164,11 @@ _RSS_FEEDS: dict[str, list[tuple[str, str]]] = {
     "crisis": [
         ("ReliefWeb", "https://reliefweb.int/updates/rss.xml"),
         ("ICG", "https://www.crisisgroup.org/rss.xml"),
-        ("Amnesty Intl", "https://www.amnesty.org/en/feed/"),
+        ("Amnesty Intl", "https://news.google.com/rss/search?q=site:amnesty.org"),
         ("Oxfam", "https://www.oxfam.org/en/rss.xml"),
     ],
     "europe": [
-        ("EurActiv", "https://www.euractiv.com/rss"),
+        ("EurActiv", "https://news.google.com/rss/search?q=site:euractiv.com"),
         ("Politico EU", "https://www.politico.eu/feed/"),
         ("EU Observer", "https://euobserver.com/rss"),
         ("DW Europe", "https://rss.dw.com/xml/rss-en-eu"),
@@ -190,9 +190,9 @@ _RSS_FEEDS: dict[str, list[tuple[str, str]]] = {
         ("Radio Free Europe", "https://www.rferl.org/api/zyrttemnuq"),
     ],
     "arctic": [
-        ("The Barents Observer", "https://thebarentsobserver.com/en/rss.xml"),
+        ("The Barents Observer", "https://news.google.com/rss/search?q=site:thebarentsobserver.com"),
         ("Arctic Today", "https://www.arctictoday.com/feed/"),
-        ("High North News", "https://www.highnorthnews.com/en/rss.xml"),
+        ("High North News", "https://news.google.com/rss/search?q=site:highnorthnews.com"),
     ],
     "maritime": [
         ("Maritime Executive", "https://www.maritime-executive.com/articles.rss"),
