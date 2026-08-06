@@ -53,6 +53,9 @@ SOURCES = [
     ("residential_natgas", "sources.economic", "fetch_residential_natgas_prices", {}),
     ("electricity_rates", "sources.economic", "fetch_electricity_rates", {}),
     ("central_bank_rates", "sources.central_banks", "fetch_central_bank_rates", {}),
+    ("eurostat_macro", "sources.eurozone", "fetch_eurostat_macro", {}),
+    ("ecb_data", "sources.eurozone", "fetch_ecb_data", {}),
+    ("ifo_zew_sentiment", "sources.eurozone", "fetch_ifo_zew_sentiment", {}),
     # Natural Disasters (2)
     ("earthquakes", "sources.seismology", "fetch_earthquakes", {}),
     ("wildfires", "sources.wildfire", "fetch_wildfires", {}),
