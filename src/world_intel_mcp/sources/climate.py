@@ -171,58 +171,50 @@ async def fetch_climate_anomalies(
     else:
         target_zones = dict(CLIMATE_ZONES)
 
+    sem = asyncio.Semaphore(2)
+
     async def _fetch_zone(zone_key: str, zone_info: dict) -> tuple[str, dict | None]:
         """Fetch current and baseline data for a single zone, compute anomalies."""
-        lat = zone_info["lat"]
-        lon = zone_info["lon"]
+        async with sem:
+            await asyncio.sleep(0.2)  # Throttle to respect Open-Meteo rate limit (max 10 req/s)
+            lat = zone_info["lat"]
+            lon = zone_info["lon"]
 
-        common_params = {
-            "latitude": lat,
-            "longitude": lon,
-            "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum",
-            "timezone": "UTC",
-        }
+            common_params = {
+                "latitude": lat,
+                "longitude": lon,
+                "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum",
+                "timezone": "UTC",
+            }
 
-        current_params = {
-            **common_params,
-            "start_date": current_start,
-            "end_date": current_end,
-        }
-        baseline_params = {
-            **common_params,
-            "start_date": baseline_start,
-            "end_date": baseline_end,
-        }
+            current_params = {
+                **common_params,
+                "start_date": current_start,
+                "end_date": current_end,
+            }
+            baseline_params = {
+                **common_params,
+                "start_date": baseline_start,
+                "end_date": baseline_end,
+            }
 
-        # Fetch current and baseline periods in parallel
-        current_data, baseline_data = await asyncio.gather(
-            fetcher.get_json(
-                url=_ARCHIVE_URL,
-                source="open-meteo",
-                cache_key=f"climate:anomalies:{zone_key}:current",
-                cache_ttl=_CACHE_TTL,
-                params=current_params,
-            ),
-            fetcher.get_json(
-                url=_ARCHIVE_URL,
-                source="open-meteo",
-                cache_key=f"climate:anomalies:{zone_key}:baseline",
-                cache_ttl=_CACHE_TTL,
-                params=baseline_params,
-            ),
-        )
-
-        if current_data is None or baseline_data is None:
-            logger.warning(
-                "Open-Meteo returned no data for zone %s (current=%s, baseline=%s)",
-                zone_key,
-                current_data is not None,
-                baseline_data is not None,
+            # Fetch current and baseline periods in parallel
+            current_data, baseline_data = await asyncio.gather(
+                fetcher.get_json(
+                    url=_ARCHIVE_URL,
+                    source="open-meteo",
+                    cache_key=f"climate:anomalies:{zone_key}:current",
+                    cache_ttl=_CACHE_TTL,
+                    params=current_params,
+                ),
+                fetcher.get_json(
+                    url=_ARCHIVE_URL,
+                    source="open-meteo",
+                    cache_key=f"climate:anomalies:{zone_key}:baseline",
+                    cache_ttl=_CACHE_TTL,
+                    params=baseline_params,
+                ),
             )
-            return (zone_key, None)
-
-        anomalies = _compute_anomalies(current_data, baseline_data)
-
         return (zone_key, {
             "name": zone_info["name"],
             "lat": lat,

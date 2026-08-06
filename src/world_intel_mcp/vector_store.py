@@ -188,7 +188,7 @@ def _get_qdrant():
             )
         from qdrant_client import QdrantClient
 
-        client = QdrantClient(url=QDRANT_URL, timeout=3.0)
+        client = QdrantClient(url=QDRANT_URL, timeout=3.0, check_compatibility=False)
 
         # Create collection if it doesn't exist
         collections = [c.name for c in client.get_collections().collections]
