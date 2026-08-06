@@ -56,6 +56,8 @@ SOURCES = [
     ("eurostat_macro", "sources.eurozone", "fetch_eurostat_macro", {}),
     ("ecb_data", "sources.eurozone", "fetch_ecb_data", {}),
     ("ifo_zew_sentiment", "sources.eurozone", "fetch_ifo_zew_sentiment", {}),
+    ("bls_releases", "sources.us_macro_direct", "fetch_bls_releases", {}),
+    ("bea_pce_gdp", "sources.us_macro_direct", "fetch_bea_pce_gdp", {}),
     # Natural Disasters (2)
     ("earthquakes", "sources.seismology", "fetch_earthquakes", {}),
     ("wildfires", "sources.wildfire", "fetch_wildfires", {}),

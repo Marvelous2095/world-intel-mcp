@@ -177,6 +177,58 @@ class Fetcher:
         logger.warning("Fetch failed for %s: %s (url=%s)", source, last_error, url)
         return self._stale_fallback(effective_key, source)
 
+    async def post_json(
+        self,
+        url: str,
+        json_data: dict[str, Any] | None = None,
+        source: str = "default",
+        cache_key: str | None = None,
+        cache_ttl: int = 300,
+        headers: dict[str, str] | None = None,
+        timeout: float | None = None,
+    ) -> dict | list | None:
+        """Fetch JSON data via POST with caching, circuit breaking, and retries."""
+        effective_key = cache_key or f"post_json:{source}:{url}:{json.dumps(json_data or {}, sort_keys=True)}"
+
+        cached = self.cache.get(effective_key)
+        if cached is not None:
+            return cached
+
+        if not self.breaker.is_available(source):
+            logger.debug("Circuit open for %s, trying stale cache", source)
+            return self._stale_fallback(effective_key, source)
+
+        await self._source_throttle(source)
+        client = await self._get_client()
+        last_error: Exception | None = None
+
+        for attempt in range(self.max_retries + 1):
+            try:
+                resp = await client.post(
+                    url,
+                    headers=headers,
+                    json=json_data,
+                    timeout=timeout or self.default_timeout,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                if not isinstance(data, (dict, list)):
+                    raise ValueError(f"Expected dict/list from {source}, got {type(data).__name__}")
+                self.breaker.record_success(source)
+                self.cache.set(effective_key, data, cache_ttl)
+                if self.vector_store:
+                    await self.vector_store.store(source, data)
+                return data
+            except (httpx.HTTPStatusError, httpx.RequestError, Exception) as exc:
+                last_error = exc
+                if attempt < self.max_retries:
+                    wait = min(2 ** attempt, 30)
+                    await asyncio.sleep(wait)
+
+        self.breaker.record_failure(source)
+        logger.warning("POST fetch failed for %s: %s (url=%s)", source, last_error, url)
+        return self._stale_fallback(effective_key, source)
+
     async def get_text(
         self,
         url: str,
